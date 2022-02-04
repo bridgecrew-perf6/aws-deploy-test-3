@@ -1,0 +1,53 @@
+language: java
+jdk: openjdk16
+
+# Travis CI 를 어느 branch 가 push 될 때 수행할지 설정
+branches:
+  only: master
+
+# gradle 통해 의존서을 받게 되면 해당 디렉토리에 cache 하여,
+# 같은 의존성은 다음 배포 때부터 받지 않도록 설정
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.gradle'
+
+before_install:
+  - chmod +x gradlew
+
+# branch 에 push 되었을 때 수행하는 명령어
+script: "./gradlew clean build"
+
+before_deploy:
+  - zip -r deploy-test ./*
+  - mkdir -p deploy
+  - mv deploy-test.zip deploy/deploy-test.zip
+
+# 외부 서비스와 연동될 명령어 정의
+deploy:
+  - provider: s3
+    access_key_id: $AWS_ACCESS_KEY
+    secret_access_key: $AWS_SECRET_KEY
+    bucket: deploy-test-s3-bucket
+    region: ap-northeast-2
+    skip_cleanup: true
+    acl: private
+    local_dir: deploy     # 지정한 위치의 파일들만 S3로 전송
+    wait_until_deployed: true
+
+  - provider: codedeploy
+    access_key_id: $AWS_ACCESS_KEY # Travis repo setting에 설정된 값
+    secret_access_key: $AWS_SECRET_KEY # Travis repo setting에 설정된 값
+    bucket: deploy-test-s3-bucket # S3 버킷
+    key: deploy-test.zip # 빌드 파일을 압축해서 전달
+    bundle_type: zip # 압축 확장자
+    application: deploy-test # 웹 콘솔에서 등록한 CodeDeploy 애플리케이션
+    deployment_group: deploy-test-group # 웹솔에서 등록한 CodeDeploy 배포 그룹
+    region: ap-northeast-2
+    wait-until-deployed: true
+
+# Travis CI 실행 완료 후 자동 알림 설정
+notifications:
+  email:
+    recipients:
+      - tigerbaram@gmail.com
