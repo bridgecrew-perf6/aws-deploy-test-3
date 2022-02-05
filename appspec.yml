@@ -4,3 +4,5 @@ files:
   - source: / # (2)
     destination: /home/ubuntu/app/step2/zip/ # (3)
     overwrite: yes # (4)
+
+# should work
