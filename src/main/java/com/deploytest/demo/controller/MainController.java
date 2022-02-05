@@ -15,7 +15,7 @@ public class MainController {
     }
 
     @GetMapping("/sayHello")
-    public String initialLoad(@RequestParam String word){
+    public String sayHello(@RequestParam String word){
         return "Hello "+word;
     }
 }
